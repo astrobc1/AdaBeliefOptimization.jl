@@ -1,0 +1,4 @@
+name = "AdaBeliefOptimization"
+uuid = "c79996f0-61d0-4a5b-b70d-3ee339792a60"
+authors = ["Bryson Cale <bryson.cale1@gmail.com>"]
+version = "0.1.0"
