@@ -42,9 +42,6 @@ function step!(state::AdaBeliefState, loss, grad, extra, lb, ub)
     mhat = state.m ./ (1 - state.β1^state.t)
     shat = state.s ./ (1 - state.β2^state.t)
     state.θ .-= state.α .* (mhat ./ (sqrt.(shat) .+ state.ϵ))
-    if !isnothing(lb) && !isnothing(ub)
-        clamp!(state.θ, lb, ub)
-    end
     state.f = loss_wrapper(loss, state.θ, extra)
     return state
 end
@@ -80,14 +77,31 @@ function print_verbose(f1, f2, k)
     println("[Iteration $k] Loss = $f2, δf (rel) = $δf")
 end
 
-function Base.clamp!(θ::AbstractArray, lo::AbstractArray, hi::AbstractArray)
-    for i in eachindex(θ)
-        clamp!(θ, lo[i], hi[i])
-    end
-    return θ
-end
-
-Base.clamp!(θ::AbstractArray, lo::Nothing, hi::Nothing) = θ
+# function Base.clamp!(state::AdaBeliefState, lo, hi, n_hit_bounds)
+#     if !isnothing(lb)
+#         for i in eachindex(state.θ)
+#             if state.θ[i] < lb[i]
+#                 θ[i] = lo[i]
+#                 state.n_clamped[i] += 1
+#                 if state.n_clamped[i] >= n_hit_bounds
+#                     state.fix[i] = true
+#                 end
+#             end
+#         end
+#     end
+#     if !isnothing(ub)
+#         for i in eachindex(θ)
+#             if state.θ[i] > ub[i]
+#                 θ[i] = ub[i]
+#                 state.n_clamped[i] += 1
+#                 if state.n_clamped[i] >= n_hit_bounds
+#                     state.fix[i] = true
+#                 end
+#             end
+#         end
+#     end
+#     return state
+# end
 
 function fix_nans!(x)
     for i in eachindex(x)
@@ -109,7 +123,7 @@ end
 #     elseif !has_low && has_high
 #         θn = @. sqrt((θ - lo + 1)^2 - 1)
 #     else
-#         return θn
+#         return copy(θ)
 #     end
 # end
 
@@ -123,6 +137,6 @@ end
 #     elseif !has_low && has_high
 #         θ = @. lo - 1 + sqrt(θn^2 + 1)
 #     else
-#         return θ
+#         return copy(θn)
 #     end
 # end
