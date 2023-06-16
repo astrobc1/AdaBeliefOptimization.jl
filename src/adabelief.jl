@@ -13,7 +13,7 @@ mutable struct AdaBeliefState{T, M, S, F}
     g::T
 end
 
-function optimize(loss, grad, p0, extra=nothing; miniters=0, maxiters, lb=nothing, ub=nothing, β1=0.99, β2=0.999, α=0.001, ϵ=1E-8, ftol=1E-6, verbose=false)
+function optimize(loss, grad, p0::AbstractArray{<:Real}, extra=nothing; miniters::Int=0, maxiters::Int, lb::AbstractArray{<:Real}, ub::AbstractArray{<:Real}, β1::Real=0.99, β2::Real=0.999, α::Real=0.001, ϵ::Real=1E-8, ftol::Real=1E-6, verbose::Bool=false)
     m0 = zero.(similar(p0))
     s0 = zero.(similar(p0))
     state = AdaBeliefState(β1, β2, α, ϵ, 0, deepcopy(p0), m0, s0, loss_wrapper(loss, p0, extra), similar(p0))
@@ -77,66 +77,11 @@ function print_verbose(f1, f2, k)
     println("[Iteration $k] Loss = $f2, δf (rel) = $δf")
 end
 
-# function Base.clamp!(state::AdaBeliefState, lo, hi, n_hit_bounds)
-#     if !isnothing(lb)
-#         for i in eachindex(state.θ)
-#             if state.θ[i] < lb[i]
-#                 θ[i] = lo[i]
-#                 state.n_clamped[i] += 1
-#                 if state.n_clamped[i] >= n_hit_bounds
-#                     state.fix[i] = true
-#                 end
-#             end
-#         end
-#     end
-#     if !isnothing(ub)
-#         for i in eachindex(θ)
-#             if state.θ[i] > ub[i]
-#                 θ[i] = ub[i]
-#                 state.n_clamped[i] += 1
-#                 if state.n_clamped[i] >= n_hit_bounds
-#                     state.fix[i] = true
-#                 end
-#             end
-#         end
-#     end
-#     return state
-# end
-
-function fix_nans!(x)
+function fix_nans!(x, v=0)
     for i in eachindex(x)
         if !isfinite(x[i])
-            x[i] = 0.0
+            x[i] = v
         end
     end
     return x
 end
-
-
-# function transform_parameters(θ, lo, hi)
-#     has_low = !isnothing(lo)
-#     has_high = !isnothing(hi)
-#     if has_low && has_high
-#         θn = @. asin(2 * (θ - lo) / (hi - lo) - 1)
-#     elseif has_low && !has_high
-#         θn = @. sqrt((hi - θ + 1)^2 - 1)
-#     elseif !has_low && has_high
-#         θn = @. sqrt((θ - lo + 1)^2 - 1)
-#     else
-#         return copy(θ)
-#     end
-# end
-
-# function reverse_transform_parameters(θn, lo, hi)
-#     has_low = !isnothing(lo)
-#     has_high = !isnothing(hi)
-#     if has_low && has_high
-#         θ = @. lo + (sin(θ) + 1) * (hi - lo) / 2
-#     elseif has_low && !has_high
-#         θ = @. hi + 1 - sqrt(θn^2 + 1)
-#     elseif !has_low && has_high
-#         θ = @. lo - 1 + sqrt(θn^2 + 1)
-#     else
-#         return copy(θn)
-#     end
-# end
